@@ -15,8 +15,8 @@ public class Player {
         Random rand = new Random();
         List<Cards> deck = game.deck;
         List<Cards> hand = new ArrayList<>();
-        int index1 = rand.nextInt(52);
-        int index2 = rand.nextInt(53);
+        int index1 = rand.nextInt(deck.size());
+        int index2 = rand.nextInt(deck.size());
 
         hand.add(deck.get(index1));
         deck.remove(index1);
@@ -111,8 +111,19 @@ public class Player {
         return 0 + (highCardRanks.getLast() / 15.0);
     }
 
+    /**
+     * Evaluates whether there is a two pair present.
+     *
+     * <p>
+     * 
+     * </p>
+     *
+     * @param riverCards: List of the community cards which are available to all
+     *                    players at the table
+     * @return A {@code double} representing the strength of the two pair.
+     *         Higher numbers indicate better hand
+     */
     public double isTwoPair(List<Cards> riverCards) {
-        // Todo: Implement this
         List<Cards> totalCards = Stream.concat(getHand().stream(), riverCards.stream()).toList();
         List<Integer> twoPairRanks = new ArrayList<>(2);
         int size = totalCards.size();
@@ -230,7 +241,6 @@ public class Player {
      *         numbers indicate better hand
      */
     public double isStraight(List<Cards> riverCards) {
-        // Todo: Test this
         List<Cards> totalCards = Stream.concat(getHand().stream(), riverCards.stream()).toList();
         List<Integer> straightRanks = new ArrayList<>(5);
         for (Cards cards : totalCards) {
@@ -327,14 +337,126 @@ public class Player {
 
     }
 
+    /**
+     * Evaluates whether there is a full house present.
+     *
+     * <p>
+     * 
+     * </p>
+     *
+     * @param riverCards: List of the community cards which are available to all
+     *                    players at the table
+     * @return A {@code double} representing the strength of the full house.
+     *         Higher numbers indicate better hand
+     */
     public double isFullHouse(List<Cards> riverCards) {
         // Todo: Implement this
-        return 0;
+        List<Cards> totalCards = Stream.concat(getHand().stream(), riverCards.stream()).toList();
+
+        int size = totalCards.size();
+        int pairOneRank = 0;
+        int tripsRank = 0;
+
+        for (int i = 0; i < size; i++) {
+            int tripsTracker = 1;
+            for (int j = i + 1; j < size; j++) {
+                if (j >= size) { // how to loop through the back of the list
+                    j -= size;
+                }
+                int iRank = totalCards.get(i).rank;
+                int jRank = totalCards.get(j).rank;
+
+                if (iRank == jRank) {
+                    tripsTracker++;
+                    if (tripsTracker == 3) {
+                        if (jRank > tripsRank) {
+                            tripsRank = jRank;
+                        }
+                        if (tripsRank == pairOneRank) {
+                            pairOneRank = 0;
+                        }
+                    } else {
+                        pairOneRank = jRank;
+                    }
+                }
+            }
+        }
+        if (tripsRank > 0 && pairOneRank > 0) {
+            return 6 + tripsRank / 15.0 + pairOneRank / 150.0;
+        } else {
+            return 0;
+        }
     }
 
+    /**
+     * Evaluates whether there is a straight flush present.
+     *
+     * <p>
+     * 
+     * </p>
+     *
+     * @param riverCards: List of the community cards which are available to all
+     *                    players at the table
+     * @return A {@code double} representing the strength of the straight flush.
+     *         Higher numbers indicate better hand
+     */
     public double isStraightFlush(List<Cards> riverCards) {
-        // Todo: Implement this
-        return 0;
+        List<Cards> totalCards = Stream.concat(getHand().stream(), riverCards.stream()).toList();
+        List<Integer> straightRanks = new ArrayList<>(5);
+        for (Cards cards : totalCards) {
+            char suit = cards.suit;
+            int suitVal = 0;
+            // arbitrary suit numbers so that straight flush can be monitored
+            switch (suit) {
+                case 'h' -> suitVal = 100;
+                case 'd' -> suitVal = 200;
+                case 'c' -> suitVal = 300;
+                case 's' -> suitVal = 400;
+                default -> suitVal = 1;
+            }
+            straightRanks.addLast(cards.rank + suitVal);
+        }
+        // Handling ace as low card in the straight. Checks if all 5 cards need for a-5
+        // straight flush are present in the list
+
+        for (int i = 1; i < 5; i++) {
+            if (straightRanks.indexOf(14 + i * 100) != -1 && straightRanks.indexOf(2 + i * 100) != -1
+                    && straightRanks.indexOf(3 + i * 100) != -1
+                    && straightRanks.indexOf(4 + i * 100) != -1 && straightRanks.indexOf(5 + i * 100) != -1) {
+                if (straightRanks.indexOf(6 + i * 100) != -1) {
+                    if (straightRanks.indexOf(7 + i * 100) != -1) {
+                        return 8 + 7.0 / 15; // 3,4,5,6,7 straight
+                    } else {
+                        return 8 + 6.0 / 15; // 2,3,4,5,6 straight
+                    }
+                } else {
+                    return 8 + 5.0 / 15; // A,2,3,4,5 straight
+                }
+            }
+        }
+        Collections.sort(straightRanks);
+        int size = straightRanks.size();
+        int i = 0;
+        int consecutive = 1;
+        int output = 0;
+        while (i < size - 1) {
+            if (straightRanks.get(i + 1) - straightRanks.get(i) == 1) {
+                consecutive++;
+                if (consecutive >= 5) {
+                    output = straightRanks.get(i + 1) % 100;
+                }
+
+            } else {
+                // reset consecutive if chain is ever broken
+                consecutive = 1;
+            }
+            i++;
+        }
+        if (output > 0) {
+            return 8 + output / 15.0;
+        } else {
+            return 0;
+        }
     }
 
     public static void main(String[] args) {
@@ -342,19 +464,19 @@ public class Player {
         Player player1 = new Player(game, "Marlon", 0);
         List<Cards> riverCards = new ArrayList<>();
 
-        riverCards.add(new Cards('h', 2));
-        riverCards.add(new Cards('h', 9));
-        riverCards.add(new Cards('c', 4));
-        riverCards.add(new Cards('c', 5));
+        riverCards.add(new Cards('h', 11));
+        riverCards.add(new Cards('h', 11));
+        riverCards.add(new Cards('h', 12));
+        riverCards.add(new Cards('c', 12));
         riverCards.add(new Cards('c', 8));
         System.out.println("River cards: " + riverCards.toString());
 
-        List<Cards> highCardTest = new ArrayList<>();
-        highCardTest.add(new Cards('h', 2));
-        highCardTest.add(new Cards('h', 9));
-        System.out.println("Marlon's hand" + highCardTest.toString());
+        List<Cards> test = new ArrayList<>();
+        test.add(new Cards('h', 11));
+        test.add(new Cards('h', 11));
+        System.out.println("Marlon's hand" + test.toString());
 
-        player1.setHand(highCardTest);
+        player1.setHand(test);
         System.out.println("High card tester: " + player1.isHighCard(riverCards));
         System.out.println("Two pair tester: " + player1.isTwoPair(riverCards));
         System.out.println("X pair tester: " + player1.isXPair(riverCards));

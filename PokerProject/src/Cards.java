@@ -1,4 +1,11 @@
+import java.util.Map;
+
 public class Cards {
+
+    public static final String ANSI_RED_BRIGHT = "\u001b[31;1m";
+    public static final String ANSI_GREY_BACKGROUND = "\u001b[0m";
+    public static final String ANSI_BLACK = "\u001B[30m";
+
     char suit;
     int rank;
     double strength;
@@ -17,6 +24,17 @@ public class Cards {
 
     public String toString() {
         String[] rankNames = { "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A" };
-        return rankNames[rank - 2] + suit;
+        String color = "";
+        Map<Character, Character> prettySuits = Map.of(
+                'h', '♥',
+                'd', '♦',
+                's', '♠',
+                'c', '♣');
+        if (suit == 'h' || suit == 'd') {
+            color = ANSI_RED_BRIGHT;
+        } else {
+            color = ANSI_BLACK;
+        }
+        return color + rankNames[rank - 2] + prettySuits.get(suit) + ANSI_GREY_BACKGROUND;
     }
 }
