@@ -3,7 +3,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
-import java.util.Random;
 
 public class Player {
     private List<Cards> hand = new ArrayList<>();
@@ -51,6 +50,48 @@ public class Player {
     }
 
     /**
+     * Validates whether a bet is legal
+     *
+     * @param
+     * table        (Table) The table object the game is being played at
+     * 
+     * @return
+     *         True if the betAmt is >= amount to be
+     *         called at the table
+     */
+    public boolean betValidation(Table table, int betAmt) {
+        if (betAmt < stackSize) {
+            if (betAmt >= table.toCall) {
+                stackSize -= betAmt;
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            // Bet amount is larger than the stack size
+            return false;
+        }
+
+    }
+
+    /**
+     * Compares the name of two players.
+     *
+     * @param
+     * p1        (Player) first player being compared
+     * 
+     * @return
+     *         Return true if players have identical names or false if either are
+     *         null or not equivalent.
+     */
+    public boolean equals(Player p1) {
+        if (p1 == null) {
+            return false;
+        }
+        return p1.name.equals(this.name);
+    }
+
+    /**
      * Evaluates the strength of a poker hand by calling helper functions
      *
      * <p>
@@ -83,9 +124,11 @@ public class Player {
      * minimum of the river card with the card in hand.
      * </p>
      *
-     * @param riverCards: List of the community cards which are available to all
-     *                    players at the table
-     * @return A {@code double} representing the strength of the high card being
+     * @param
+     * riverCards        List of the community cards which are available to all
+     *                   players at the table
+     * @return
+     *         A {@code double} representing the strength of the high card being
      *         evaluated. Higher numbers indicate better high card
      */
     public double isHighCard(List<Cards> riverCards) {
@@ -462,8 +505,10 @@ public class Player {
 
     public static void main(String[] args) {
         Game game = new Game();
+
         Player player1 = new Player(game, "Marlon", 0);
         Player player2 = new Player(game, "Pavel", 0);
+        Table table = new Table(game, new ArrayList<>(Arrays.asList(player1, player2)));
         List<Cards> riverCards = new ArrayList<>();
 
         // riverCards.add(new Cards('s', 9));
@@ -476,12 +521,12 @@ public class Player {
         // test.add(new Cards('h', 11));
         // System.out.println("Player One's hand" + test.toString());
 
-        riverCards.addAll(game.flop());
-        riverCards.add(game.turnOrRiver());
-        riverCards.add(game.turnOrRiver());
+        riverCards.addAll(table.flop());
+        riverCards.add(table.turnOrRiver());
+        riverCards.add(table.turnOrRiver());
         System.out.println("River cards: " + riverCards.toString());
-        game.setPlayerHand(player1);
-        game.setPlayerHand(player2);
+        table.setPlayerHand(player1);
+        table.setPlayerHand(player2);
         System.out.println("Player one's hand: " + player1.getHand());
         System.out.println("Player two's hand: " + player2.getHand());
 
