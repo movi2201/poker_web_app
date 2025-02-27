@@ -12,17 +12,6 @@ public class Player {
     private boolean revealed = false;
 
     public Player(Game game, String name, int stackSize) {
-        Random rand = new Random();
-        List<Cards> deck = game.deck;
-        List<Cards> hand = new ArrayList<>();
-        int index1 = rand.nextInt(deck.size());
-        int index2 = rand.nextInt(deck.size());
-
-        hand.add(deck.get(index1));
-        deck.remove(index1);
-        hand.add(deck.get(index2));
-        deck.remove(index2);
-
         this.name = name;
         this.stackSize = stackSize;
     }
@@ -115,7 +104,8 @@ public class Player {
      * Evaluates whether there is a two pair present.
      *
      * <p>
-     * 
+     * Method uses nested for loops to iterate through totalCards to find two pairs
+     * that are a different rank
      * </p>
      *
      * @param riverCards: List of the community cards which are available to all
@@ -261,20 +251,25 @@ public class Player {
             }
         }
         Collections.sort(straightRanks);
+
         int size = straightRanks.size();
         int i = 0;
         int consecutive = 1;
         int output = 0;
+        int difference;
         while (i < size - 1) {
-            if (straightRanks.get(i + 1) - straightRanks.get(i) == 1) {
+            difference = straightRanks.get(i + 1) - straightRanks.get(i);
+            if (difference == 1) {
                 consecutive++;
                 if (consecutive >= 5) {
                     output = straightRanks.get(i + 1);
                 }
 
             } else {
-                // reset consecutive if chain is ever broken
-                consecutive = 1;
+                if (difference != 0) {
+                    // reset consecutive if chain is ever broken by something that's not a duplicate
+                    consecutive = 1;
+                }
             }
             i++;
         }
@@ -341,7 +336,8 @@ public class Player {
      * Evaluates whether there is a full house present.
      *
      * <p>
-     * 
+     * Method uses nested for loops to iterate through totalCards to find a set and
+     * a pair that are a different rank
      * </p>
      *
      * @param riverCards: List of the community cards which are available to all
@@ -350,18 +346,19 @@ public class Player {
      *         Higher numbers indicate better hand
      */
     public double isFullHouse(List<Cards> riverCards) {
-        // Todo: Implement this
-        List<Cards> totalCards = Stream.concat(getHand().stream(), riverCards.stream()).toList();
 
+        List<Cards> totalCards = Stream.concat(getHand().stream(), riverCards.stream()).toList();
         int size = totalCards.size();
         int pairOneRank = 0;
         int tripsRank = 0;
-
         for (int i = 0; i < size; i++) {
             int tripsTracker = 1;
-            for (int j = i + 1; j < size; j++) {
+            for (int j = i + 1; j < size + i; j++) {
                 if (j >= size) { // how to loop through the back of the list
                     j -= size;
+                }
+                if (j == i) {
+                    break;
                 }
                 int iRank = totalCards.get(i).rank;
                 int jRank = totalCards.get(j).rank;
@@ -392,7 +389,11 @@ public class Player {
      * Evaluates whether there is a straight flush present.
      *
      * <p>
-     * 
+     * Method creates new list straightRanks of all the ranks of the cards +n*100
+     * (where n is an integer representing the suit of the card) in totalCards. Then
+     * there is a check to see if the a-5 low straight is present. Then finally the
+     * sorted straightRanks list is traversed trying to find five cards in
+     * consecutive order.
      * </p>
      *
      * @param riverCards: List of the community cards which are available to all
@@ -462,21 +463,28 @@ public class Player {
     public static void main(String[] args) {
         Game game = new Game();
         Player player1 = new Player(game, "Marlon", 0);
+        Player player2 = new Player(game, "Pavel", 0);
         List<Cards> riverCards = new ArrayList<>();
 
-        riverCards.add(new Cards('h', 11));
-        riverCards.add(new Cards('h', 11));
-        riverCards.add(new Cards('h', 12));
-        riverCards.add(new Cards('c', 12));
-        riverCards.add(new Cards('c', 8));
+        // riverCards.add(new Cards('s', 9));
+        // riverCards.add(new Cards('d', 2));
+        // riverCards.add(new Cards('d', 11));
+        // riverCards.add(new Cards('c', 4));
+        // riverCards.add(new Cards('h', 8));
+        // List<Cards> test = new ArrayList<>();
+        // test.add(new Cards('h', 11));
+        // test.add(new Cards('h', 11));
+        // System.out.println("Player One's hand" + test.toString());
+
+        riverCards.addAll(game.flop());
+        riverCards.add(game.turnOrRiver());
+        riverCards.add(game.turnOrRiver());
         System.out.println("River cards: " + riverCards.toString());
+        game.setPlayerHand(player1);
+        game.setPlayerHand(player2);
+        System.out.println("Player one's hand: " + player1.getHand());
+        System.out.println("Player two's hand: " + player2.getHand());
 
-        List<Cards> test = new ArrayList<>();
-        test.add(new Cards('h', 11));
-        test.add(new Cards('h', 11));
-        System.out.println("Marlon's hand" + test.toString());
-
-        player1.setHand(test);
         System.out.println("High card tester: " + player1.isHighCard(riverCards));
         System.out.println("Two pair tester: " + player1.isTwoPair(riverCards));
         System.out.println("X pair tester: " + player1.isXPair(riverCards));
@@ -485,7 +493,8 @@ public class Player {
         System.out.println("Full house tester: " + player1.isFullHouse(riverCards));
         System.out.println("Straight flush tester: " + player1.isStraightFlush(riverCards));
 
-        System.out.println("Hand evaluator tester: " + player1.handEvaluator(riverCards));
+        System.out.println("Player one's hand evaluated at: " + player1.handEvaluator(riverCards));
+        System.out.println("Player two's hand evaluated at: " + player2.handEvaluator(riverCards));
 
     }
 }
