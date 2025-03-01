@@ -8,7 +8,7 @@ public class Player {
     private List<Cards> hand = new ArrayList<>();
     public String name;
     public int stackSize;
-    private boolean revealed = false;
+    private boolean revealed = true;
 
     public Player(Game game, String name, int stackSize) {
         this.name = name;
@@ -62,7 +62,7 @@ public class Player {
     public boolean betValidation(Table table, int betAmt) {
         if (betAmt < stackSize) {
             if (betAmt >= table.toCall) {
-                stackSize -= betAmt;
+                bet(table, betAmt);
                 return true;
             } else {
                 return false;
@@ -72,6 +72,11 @@ public class Player {
             return false;
         }
 
+    }
+
+    public void bet(Table table, int betAmt) {
+        stackSize -= betAmt;
+        table.potSize += betAmt;
     }
 
     /**
